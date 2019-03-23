@@ -1,5 +1,5 @@
-`ifndef HVSYNC_GENERATOR_V
-`define HVSYNC_GENERATOR_V
+`ifndef _8BIT_HVSYNC_GENERATOR_V
+`define _8BIT_HVSYNC_GENERATOR_V
 
 module hvsync_generator(clk, reset, hsync, vsync, display_on, hpos, vpos);
    input clk;
