@@ -1,0 +1,10 @@
+# For the iCE40HX-1K iCEstick
+
+set_io D0 81
+set_io clk 21
+
+set_io LED1 99
+set_io LED2 98
+set_io LED3 97
+set_io LED4 96
+set_io LED5 95
