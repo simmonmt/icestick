@@ -1,4 +1,4 @@
-load("//bazel:icetools.bzl", "ice_binary")
+load("//build:icerules.bzl", "ice_binary")
 
 ice_binary(
   name = "rot",
