@@ -28,7 +28,7 @@ def _run_iverilog(actions, iverilog_path, src, vvp, trans_srcs):
         mnemonic='iVerilog',
         executable=iverilog_path)
 
-def _run_yosys(actions, yosys_path, src, blif, yosys_log, trans_srcs):
+def _run_yosys(actions, yosys_path, src, data, blif, yosys_log, trans_srcs):
     args = actions.args()
     args.add_all(['-p', 'synth_ice40 -blif {}'.format(blif.path)])
     args.add('-q')  # Only log warnings and errors to console
@@ -36,7 +36,7 @@ def _run_yosys(actions, yosys_path, src, blif, yosys_log, trans_srcs):
     args.add(src)
 
     actions.run(
-        inputs=trans_srcs,
+        inputs=trans_srcs + data,
         outputs=[blif, yosys_log],
         arguments=[args],
         mnemonic='YoSys',
@@ -92,13 +92,15 @@ def _verilog_library_impl(ctx):
     
     return [
         VerilogFiles(transitive_sources = trans_srcs),
-        DefaultInfo(files = trans_srcs),
+        DefaultInfo(files=trans_srcs,
+                    data_runfiles=ctx.runfiles(collect_data=True)),
     ]
 
 verilog_library = rule(
     implementation = _verilog_library_impl,
     attrs = {
         'srcs': attr.label_list(allow_files=True, mandatory=True),
+        'data': attr.label_list(allow_files=True),
         'deps': attr.label_list(providers=[VerilogFiles]),
     },
     toolchains = ["//build/toolchains:toolchain_type"],
@@ -114,11 +116,15 @@ def _ice_binary_impl(ctx):
     vvps = _run_iverilog_for_srcs(ctx.actions, tc.iverilog_path, ctx.files.src,
                                   ctx.attr.deps)
 
-    trans_srcs = _get_transitive_srcs(ctx.files.src + vvps, ctx.attr.deps).to_list()
+    trans_srcs = _get_transitive_srcs(ctx.files.src + vvps,
+                                      ctx.attr.deps).to_list()
+
+    data = ctx.runfiles(collect_data=True)
 
     blif = _declare_file(ctx, ctx.outputs.out.path, '.blif')
     yosys_log = _declare_file(ctx, ctx.outputs.out.path, '.yosys_log')
-    _run_yosys(ctx.actions, tc.yosys_path, ctx.files.src, blif, yosys_log, trans_srcs)
+    _run_yosys(ctx.actions, tc.yosys_path, ctx.files.src, data.files.to_list(),
+               blif, yosys_log, trans_srcs)
 
     asc = ctx.actions.declare_file(
         paths.basename(paths.replace_extension(ctx.outputs.out.path, '.asc')))
@@ -132,6 +138,7 @@ ice_binary = rule(
         'src': attr.label(allow_single_file=True, mandatory=True),
         'pcf': attr.label(allow_single_file=True, mandatory=True),
         'out': attr.output(mandatory=True),
+        'data': attr.label_list(allow_files=True),
         'deps': attr.label_list(providers=[VerilogFiles]),
     },
     toolchains = ["//build/toolchains:toolchain_type"],
