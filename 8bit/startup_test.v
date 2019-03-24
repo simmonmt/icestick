@@ -1,11 +1,5 @@
 `include "8bit/startup.v"
-
-`define assert(signal, value) \
-        if (signal !== value) begin \
-            $display("ASSERTION FAILED in %m: signal != value"); \
-            $display("time is %t", $time); \
-            $finish_and_return(1); \
-        end
+`include "8bit/testutil.v"
 
 module test;
    initial begin
