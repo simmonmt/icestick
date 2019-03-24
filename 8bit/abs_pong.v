@@ -1,12 +1,15 @@
+`include "8bit/abs_pong_logic.v"
 `include "8bit/hvsync_generator.v"
+`include "8bit/startup.v"
 
-module abs_pong_top(clk, out, led1, led2);
+module abs_pong_top(clk, out, led);
    input clk;
    output [1:0] out;
-   output 	led1, led2;
+   output [4:0] led;
 
    localparam DISPLAY_WIDTH = 256;
    localparam DISPLAY_HEIGHT = 240;
+   localparam BALL_SIZE = 8;
 
    localparam SYNC = 0;
    localparam BLACK = 1;
@@ -18,7 +21,11 @@ module abs_pong_top(clk, out, led1, led2);
       clk2 <= !clk2;
    end
 
-   wire reset = 0;
+   assign led = 0;
+
+   wire reset;
+   startup startup (.clk(clk2),
+		    .reset(reset));
 
    wire       hsync, vsync;
    wire       display_on;
@@ -33,51 +40,30 @@ module abs_pong_top(clk, out, led1, led2);
 		     .vsync(vsync),
 		     .display_on(display_on),
 		     .hpos(hpos),
-		     .vpos(vpos)
-		     );
+		     .vpos(vpos));
 
-   localparam BALL_SIZE = 4;
-   localparam BALL_HORIZ_INITIAL = DISPLAY_WIDTH / 2;
-   localparam BALL_VERT_INITIAL = DISPLAY_HEIGHT / 2;
-   
-   reg [8:0]  ball_hpos;
-   reg [8:0]  ball_vpos;
+   wire [8:0] ball_hpos;
+   wire [8:0] ball_vpos;
 
-   reg [8:0]  ball_horiz_move = -2;	// ball current X velocity
-   reg [8:0]  ball_vert_move = 2;	// ball current Y velocity
-
-   always @(posedge vsync or posedge reset)
-     begin
-	if (reset) begin
-	   ball_hpos <= BALL_HORIZ_INITIAL;
-	   ball_vpos <= BALL_VERT_INITIAL;
-	end else begin
-	   ball_hpos <= ball_hpos + ball_horiz_move;
-	   ball_vpos <= ball_vpos + ball_vert_move;
-	end
-     end
-
-   always @(posedge ball_horiz_collide)
-     ball_horiz_move <= -ball_horiz_move;
-
-   always @(posedge ball_vert_collide)
-     ball_vert_move <= -ball_vert_move;
+   ball_logic #(DISPLAY_WIDTH, DISPLAY_HEIGHT, BALL_SIZE)
+         ball_logic (.clk(vsync),
+		     .reset(reset),
+		     .ball_hpos(ball_hpos),
+		     .ball_vpos(ball_vpos));
 
    wire [8:0] ball_hdiff = hpos - ball_hpos;
    wire [8:0] ball_vdiff = vpos - ball_vpos;
 
-   wire ball_horiz_collide = ball_hpos >= (DISPLAY_WIDTH - BALL_SIZE);
-   wire ball_vert_collide = ball_vpos >= (DISPLAY_HEIGHT - BALL_SIZE);
+   wire       ball_hon = ball_hdiff < BALL_SIZE;
+   wire       ball_von = ball_vdiff < BALL_SIZE;
+   wire       ball_on = display_on && ball_hon && ball_von;
 
-   assign led1 = ball_vert_collide;
-   assign led2 = ball_horiz_collide;
+   wire       centering_on = display_on && ((ball_hon && !ball_von) || (ball_von && !ball_hon));
 
-   wire       ball_hgfx = ball_hdiff < BALL_SIZE;
-   wire       ball_vgfx = ball_vdiff < BALL_SIZE;
-   wire       ball_gfx = ball_hgfx && ball_vgfx;
+   assign out = (hsync||vsync) ? SYNC : (ball_on ? WHITE : (centering_on ? GRAY : BLACK));
 
-   wire       pixel_on = display_on && (ball_gfx || vpos == 0 || hpos == 0 || vpos == DISPLAY_HEIGHT-1 || hpos == DISPLAY_WIDTH-1) && vpos != ball_vpos && hpos != ball_hpos;
+   //wire       pixel_on = display_on && (ball_gfx || vpos == 0 || hpos == 0 || vpos == DISPLAY_HEIGHT-1 || hpos == DISPLAY_WIDTH-1) && vpos != ball_vpos && hpos != ball_hpos;
 
-   assign out = (hsync||vsync) ? SYNC : (pixel_on ? WHITE : BLACK);
+   //assign out = (hsync||vsync) ? SYNC : (pixel_on ? WHITE : BLACK);
 
 endmodule // abs_pong_top

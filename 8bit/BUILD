@@ -44,10 +44,27 @@ ice_binary(
     out = "test_hvsync.bin",
     deps = [ ":hvsync_generator_lib" ])
 
+ice_library(
+    name = "abs_pong_logic",
+    srcs = [ "abs_pong_logic.v" ])
 
 ice_binary(
     name = "abs_pong",
     src = "abs_pong.v",
     pcf = "icestick.pcf",
     out = "abs_pong.bin",
-    deps = [ ":hvsync_generator_lib" ])
+    deps = [
+        ":abs_pong_logic",
+        ":hvsync_generator_lib",
+        ":startup_lib",
+    ])
+
+ice_test(
+    name = "abs_pong_logic_test",
+    src = "abs_pong_logic_test.v",
+    size = "small",
+    deps = [
+        ":abs_pong_logic",
+        ":testutil",
+    ])
+    
