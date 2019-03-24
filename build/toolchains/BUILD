@@ -15,6 +15,7 @@ icetools_toolchain(
     arachne_pnr_path = paths.join(_SIMMONMT_ROOT, 'arachne-pnr'),
     icepack_path = paths.join(_SIMMONMT_ROOT, 'icepack'),
     iverilog_path = paths.join(_SIMMONMT_ROOT, 'iverilog'),
+    vvp_path = paths.join(_SIMMONMT_ROOT, 'vvp'),
     yosys_path = paths.join(_SIMMONMT_ROOT, 'yosys'),
 )
 

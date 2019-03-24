@@ -1,10 +1,10 @@
-load("//build:icerules.bzl", "verilog_library", "ice_binary")
+load("//build:icerules.bzl", "ice_binary", "ice_library", "ice_test")
 
-verilog_library(
+ice_library(
     name = "hvsync_generator_lib",
     srcs = [ "hvsync_generator.v" ])
 
-verilog_library(
+ice_library(
     name = "digits16_array_lib",
     srcs = [ "digits16_array.v" ],
     data = [ "digits5x5.txt" ])

@@ -82,7 +82,7 @@ def _run_iverilog_for_srcs(actions, iverilog_path, srcs, deps):
 
     return vvps
 
-def _verilog_library_impl(ctx):
+def _ice_library_impl(ctx):
     tc = ctx.toolchains["//build/toolchains:toolchain_type"]
 
     vvps = _run_iverilog_for_srcs(ctx.actions, tc.iverilog_path, ctx.files.srcs,
@@ -96,8 +96,8 @@ def _verilog_library_impl(ctx):
                     data_runfiles=ctx.runfiles(collect_data=True)),
     ]
 
-verilog_library = rule(
-    implementation = _verilog_library_impl,
+ice_library = rule(
+    implementation = _ice_library_impl,
     attrs = {
         'srcs': attr.label_list(allow_files=True, mandatory=True),
         'data': attr.label_list(allow_files=True),
@@ -143,4 +143,27 @@ ice_binary = rule(
     },
     toolchains = ["//build/toolchains:toolchain_type"],
 )
-        
+
+def _ice_test_impl(ctx):
+    tc = ctx.toolchains["//build/toolchains:toolchain_type"]
+
+    vvps = _run_iverilog_for_srcs(ctx.actions, tc.iverilog_path, ctx.files.src,
+                                  ctx.attr.deps)
+
+    script = "{} -n {}\n".format(tc.vvp_path, vvps[0].short_path)
+    ctx.actions.write(
+        output = ctx.outputs.executable,
+        content = script)
+
+    runfiles = ctx.runfiles(files=vvps)
+    return [DefaultInfo(runfiles=runfiles)]
+
+ice_test = rule(
+    implementation = _ice_test_impl,
+    attrs = {
+        'src': attr.label(allow_single_file=True, mandatory=True),
+        'deps': attr.label_list(providers=[VerilogFiles]),
+    },
+    toolchains = ["//build/toolchains:toolchain_type"],
+    test = True,
+)
