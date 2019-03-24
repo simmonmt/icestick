@@ -1,6 +1,16 @@
 load("//build:icerules.bzl", "ice_binary", "ice_library", "ice_test")
 
 ice_library(
+    name = "startup_lib",
+    srcs = [ "startup.v" ])
+
+ice_test(
+    name = "startup_test",
+    src = "startup_test.v",
+    size = "small",
+    deps = [ ":startup_lib" ])
+
+ice_library(
     name = "hvsync_generator_lib",
     srcs = [ "hvsync_generator.v" ])
 
