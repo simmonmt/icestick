@@ -35,3 +35,11 @@ ice_binary(
     pcf = "test_hvsync.pcf",
     out = "test_hvsync.bin",
     deps = [ ":hvsync_generator_lib" ])
+
+
+ice_binary(
+    name = "abs_pong",
+    src = "abs_pong.v",
+    pcf = "icestick.pcf",
+    out = "abs_pong.bin",
+    deps = [ ":hvsync_generator_lib" ])

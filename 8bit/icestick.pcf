@@ -1,0 +1,11 @@
+# For the iCE40HX-1K iCEstick
+
+set_io clk 21
+set_io out[0] 81
+set_io out[1] 80
+
+set_io -nowarn led1 99
+set_io -nowarn led2 98
+set_io -nowarn led3 97
+set_io -nowarn led4 96
+set_io -nowarn led5 95
