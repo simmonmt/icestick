@@ -1,0 +1,12 @@
+#!/bin/sh
+
+exec 1>&2
+
+build_files=$(git diff --cached --name-only | grep '/BUILD$')
+
+if [[ -n "${build_files}" ]] ; then
+  if ! buildifier --mode=check ${build_files} ; then
+    echo "Buildifier check failed"
+    exit 1
+  fi
+fi
