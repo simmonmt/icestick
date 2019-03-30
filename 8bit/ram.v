@@ -43,6 +43,7 @@ module ram_async(clk, addr, din, dout, we);
 
 endmodule
 
+/* -----\/----- EXCLUDED -----\/-----
 module ram_async_tristate(clk, addr, data, we);
   
   parameter A = 10; // # of address bits
@@ -63,5 +64,6 @@ module ram_async_tristate(clk, addr, data, we);
   assign data = !we ? mem[addr] : {D{1'bz}}; // read memory to data (async)
 
 endmodule
+ -----/\----- EXCLUDED -----/\----- */
 
 `endif // _8BIT_RAM_SYNC_V

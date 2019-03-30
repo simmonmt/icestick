@@ -7,7 +7,7 @@ ice_library(
 )
 
 ice_library(
-    name = "startup_lib",
+    name = "startup",
     srcs = ["startup.v"],
 )
 
@@ -16,18 +16,24 @@ ice_test(
     size = "small",
     src = "startup_test.v",
     deps = [
-        ":startup_lib",
+        ":startup",
         ":testutil",
     ],
 )
 
 ice_library(
-    name = "hvsync_generator_lib",
+    name = "hvsync_generator",
     srcs = ["hvsync_generator.v"],
 )
 
 ice_library(
-    name = "digits16_array_lib",
+    name = "hvsync_generator_adafruit",
+    srcs = ["hvsync_generator_adafruit.v"],
+    deps = [":hvsync_generator"],
+)
+
+ice_library(
+    name = "digits16_array",
     srcs = ["digits16_array.v"],
     data = ["digits5x5.txt"],
 )
@@ -38,8 +44,8 @@ ice_binary(
     out = "test_digits.bin",
     pcf = "test_digits.pcf",
     deps = [
-        ":digits16_array_lib",
-        ":hvsync_generator_lib",
+        ":digits16_array",
+        ":hvsync_generator",
     ],
 )
 
@@ -48,7 +54,7 @@ ice_binary(
     src = "test_hvsync.v",
     out = "test_hvsync.bin",
     pcf = "test_hvsync.pcf",
-    deps = [":hvsync_generator_lib"],
+    deps = [":hvsync_generator"],
 )
 
 ice_library(
@@ -63,8 +69,8 @@ ice_binary(
     pcf = "icestick.pcf",
     deps = [
         ":abs_pong_logic",
-        ":hvsync_generator_lib",
-        ":startup_lib",
+        ":hvsync_generator",
+        ":startup",
     ],
 )
 
@@ -79,6 +85,19 @@ ice_test(
 )
 
 ice_library(
-    name = "ram_sync",
-    srcs = ["ram_sync.v"],
+    name = "ram",
+    srcs = ["ram.v"],
+)
+
+ice_binary(
+    name = "ram_text_display",
+    src = "ram_text_display.v",
+    out = "ram_text_display.bin",
+    pcf = "icestick.pcf",
+    deps = [
+        ":digits16_array",
+        ":hvsync_generator_adafruit",
+        ":ram",
+        ":startup",
+    ],
 )
