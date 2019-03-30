@@ -1,3 +1,4 @@
-Based on examples from Designing Video Game Harware in Verilog by Steven Hugg
+Based on examples from Designing Video Game Hardware in Verilog by Steven Hugg
 
-Some will be as-is, others I'll have tweaked
+Some will be as-is, others I'll have tweaked. All will be set up for use on the
+icestick hardware rather than in the 8bitworkshop.com IDE.
