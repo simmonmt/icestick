@@ -77,3 +77,8 @@ ice_test(
         ":testutil",
     ],
 )
+
+ice_library(
+    name = "ram_sync",
+    srcs = ["ram_sync.v"],
+)
