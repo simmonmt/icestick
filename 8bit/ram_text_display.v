@@ -50,43 +50,68 @@ module ram_text_display(clk, out);
    reg [7:0] 	ram_write;  // Value to write to RAM
    reg 		ram_writeenable = 0;
 
-   // RAM to hold 32x32 array of bytes
-   ram_sync ram(.clk(clk),
+   // RAM to hold 32x32 array of bytes.
+   //
+   // The book uses a synchronous RAM, but that doesn't work in practice on the
+   // icestick (it seems to work on the 8bitworkshop IDE though). The
+   // synchronous RAM can't read the new value fast enough -- it needs an extra
+   // clock cycle. A synchronous RAM would work if we prefetched, but we don't
+   // do in this example.
+   ram_async ram(.clk(clk),
 		.dout(ram_read),
 		.din(ram_write),
 		.addr(ram_addr),
 		.we(ram_writeenable));
 
-   wire [4:0] 	row = vpos[7:3];       // 5-bit row, vpos / 8
-   wire [4:0] 	col = hpos[7:3];       // 5-bit col, hpos / 8
-   wire [2:0] 	rom_yoff = vpos[2:0];  // scanline of cell
+   localparam CHAR_MULT = 3;
+
+   wire [4:0] 	row = vpos[7:CHAR_MULT+2];       // 4-bit row, vpos / 8
+   wire [4:0] 	col = hpos[7:CHAR_MULT+2];       // 4-bit col, hpos / 8
+   wire [2:0] 	rom_yoff = vpos[CHAR_MULT+1:CHAR_MULT-1]; // scanline of cell
    wire [4:0] 	rom_bits;              // 5 pixels per scanline
 
    assign ram_addr = {row, col};
 
    wire [3:0] 	digit = ram_read[3:0];
-   wire [2:0] 	xoff = hpos[2:0];
+   wire [2:0] 	rom_xoff = hpos[CHAR_MULT+1:CHAR_MULT-1];
+
+   // True if this is the first pixel for a given value of rom_xoff in the
+   // current digit. CHAR_MULT means there can be multiple pixels used for each
+   // value of rom_xoff.
+   wire 	rom_xoff_start = (CHAR_MULT == 1) ? 1 : (hpos[CHAR_MULT-2:0] == 0);
 
    digits16_array numbers(.digit(digit),
 			  .yoff(rom_yoff),
 			  .bits(rom_bits));
 
-   reg [3:0] 	frame = 0;
+   // Used to throttle the value updates. If we don't, it'll update every frame.
+   reg [4:0] 	frame;
    always @(posedge vsync)
      frame <= frame + 1;
 
-   // increment the current RAM cell so we get some animation
-   always @(posedge clk)
-     case (xoff)
-       6: begin  // on 7th pixel of cell
-	  ram_write <= (ram_read + 1);
-	  ram_writeenable <= (rom_yoff == 7 && frame == 0);  // only on last scanline of cell
-       end
-       7: begin  // on 8th pixel of cell
-	  ram_writeenable <= 0;
-       end
-     endcase // case (xoff)
+   // update_trigger is true if we should be evaluating for animation. It will
+   // be true one scanline per digit (which isn't the same as one rom_yoff value
+   // per digit due to CHAR_MULT), and on that scanline, for one pixel for each
+   // distinct value of xoff.
+   wire 	vertical_update_trigger = vpos[CHAR_MULT+1:0] == 7 << (CHAR_MULT-1);
+   wire 	horiz_update_trigger = rom_xoff_start;
+   wire 	update_trigger = vertical_update_trigger && horiz_update_trigger;
 
-   wire 	pixel_on = display_on && xoff < 5 && rom_bits[xoff];
+   // Increment the current RAM cell so we get some animation.
+   always @(posedge clk)
+     if (display_on && frame == 0 && update_trigger)
+       case (rom_xoff)
+	 6: begin
+	    // update_trigger is especially important for this increment because
+	    // it ensures that we only hit this case once per digit. If we
+	    // didn't have it, we'd update the value more than once per digit.
+	    ram_write <= ram_read + 1;
+	    ram_writeenable <= 1;
+	 end
+	 7: ram_writeenable <= 0;
+       endcase
+
+   wire 	pixel_on = display_on && rom_xoff < 5 && rom_bits[rom_xoff];
    assign out = (hsync||vsync) ? SYNC : (pixel_on ? WHITE : BLACK);
+
 endmodule  // ram_text_display
